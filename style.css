@@ -1,0 +1,543 @@
+/* =========================================================
+   信号检测论 · 交互式实验室 样式表
+   第一阶段：登录 / 主界面 / 游戏 / 结果
+   ========================================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #8f2b2b;          /* 暗红主色（恐怖主题） */
+  --navy-dark: #4a1414;
+  --bg: #0b0d0c;            /* 近黑 */
+  --ink: #d8d4c8;           /* 旧纸白 */
+  --sub: #8f948c;
+  --line: #2b2f2d;
+  --gold: #a8853e;
+  --gold-dark: #8a6a2c;
+  --green: #4a8a5f;
+  --red: #a83232;
+}
+
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* 全局胶片噪点（细颗粒 + 缓慢跳帧闪烁，营造老胶片质感；不拦截点击） */
+body::after {
+  content: ''; position: fixed; inset: -60px; z-index: 80; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  opacity: .055;
+  animation: grainShift .8s steps(4) infinite;
+}
+@keyframes grainShift {
+  0% { background-position: 0 0; }
+  25% { background-position: -30px 20px; }
+  50% { background-position: 20px -25px; }
+  75% { background-position: -15px -20px; }
+  100% { background-position: 0 0; }
+}
+
+/* ---------- 屏幕切换 ---------- */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+.hidden { display: none !important; }
+.muted { color: var(--sub); }
+.center-row { display: flex; gap: 14px; justify-content: center; margin: 26px 0 40px; flex-wrap: wrap; }
+
+/* ---------- 登录（实验指导 · 恐怖主题） ---------- */
+#screen-login {
+  align-items: center; justify-content: center;
+  padding: 24px; position: relative; overflow: hidden;
+  background: #0b0d0c;
+}
+/* 背景：两个游戏场景图左右拼接，模糊 + 压暗 + 去饱和 */
+#screen-login::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(11,13,12,.30), rgba(11,13,12,.58) 50%, rgba(11,13,12,.30)),
+    url('assets/game1.jpg') left top / 50% 100% no-repeat,
+    url('assets/game2.jpg') right top / 50% 100% no-repeat;
+  filter: blur(8px) brightness(.48) saturate(.8);
+  transform: scale(1.09);
+}
+/* 边缘晕影 */
+#screen-login::after {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 92% 82% at 50% 45%, transparent 38%, rgba(5,6,5,.88) 100%);
+}
+#screen-login > * { position: relative; z-index: 1; }
+
+.login-card {
+  background: rgba(10,12,11,.68); backdrop-filter: blur(14px);
+  border: 1px solid rgba(160,60,60,.26); border-radius: 10px;
+  padding: 28px 36px; width: 100%; max-width: 600px;
+  max-height: 93vh; overflow-y: auto;
+  box-shadow: 0 24px 70px rgba(0,0,0,.7), inset 0 0 60px rgba(0,0,0,.35);
+}
+.login-card::-webkit-scrollbar { width: 8px; }
+.login-card::-webkit-scrollbar-track { background: transparent; }
+.login-card::-webkit-scrollbar-thumb { background: #3a3f3c; border-radius: 4px; }
+
+.horror-title {
+  font-size: 26px; color: #c23a3a; letter-spacing: 8px; font-weight: 700;
+  text-shadow: 0 0 14px rgba(194,58,58,.55), 0 0 44px rgba(194,58,58,.28);
+}
+.login-sub { color: #6f7670; font-size: 11px; letter-spacing: 2.5px; margin: 6px 0 14px; }
+.guide-welcome { font-size: 14px; color: #c8c4b8; margin-bottom: 16px; }
+.guide-task {
+  border: 1px solid #2e3230; border-left: 3px solid #7a1f1f;
+  background: rgba(18,20,19,.55); border-radius: 0 8px 8px 0;
+  padding: 12px 16px; margin-bottom: 12px; font-size: 13.5px; color: #b0aca0;
+}
+.guide-task h3 { font-size: 15px; color: #d8d4c8; margin-bottom: 6px; }
+.guide-num {
+  display: inline-block; min-width: 22px; height: 22px; line-height: 22px; text-align: center;
+  background: #7a1f1f; color: #f0dede; border-radius: 4px; margin-right: 8px; font-size: 13px;
+}
+.guide-task .sig { color: #d98a8a; }
+.guide-warn { color: #c98a4a; font-size: 12.5px; margin-top: 6px; }
+.guide-form { margin-top: 16px; border-top: 1px dashed #33373a; padding-top: 14px; }
+.login-card label { display: block; font-size: 13px; color: #b8b4a8; margin-bottom: 12px; }
+.login-card input {
+  display: block; width: 100%; margin-top: 6px; padding: 10px 12px;
+  background: #0e100f; border: 1px solid #33373a; border-radius: 8px;
+  font-size: 15px; color: #d8d4c8;
+}
+.login-card input::placeholder { color: #565c58; }
+.login-card input:focus { outline: 2px solid #6e2424; border-color: #8f2b2b; }
+.login-err { color: #d98a8a; font-size: 13px; min-height: 20px; margin-bottom: 6px; }
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  background: linear-gradient(160deg, #0d0f0e, #161917 55%, #1e1111);
+  color: #e0dccf; padding: 34px 6vw 30px; position: relative;
+  border-bottom: 1px solid #222624;
+}
+.topbar.slim { padding: 20px 6vw 16px; }
+.topbar h1 { font-size: 26px; font-weight: 600; }
+.topbar.slim h1 { font-size: 20px; }
+.topbar-sub { color: #7d857e; font-size: 13px; margin-top: 2px; }
+.topbar-desc { color: #a8aca0; font-size: 14px; max-width: 640px; margin-top: 10px; }
+.badge {
+  display: inline-block; margin-top: 14px; padding: 4px 16px;
+  border: 1px solid rgba(200,150,140,.35); border-radius: 999px;
+  font-size: 13px; color: #d8a9a9;
+}
+.userchip {
+  position: absolute; top: 16px; right: 6vw; font-size: 13px; color: #8f948c;
+}
+.userchip a { color: #d8a9a9; margin-left: 12px; text-decoration: none; }
+.userchip a:hover { text-decoration: underline; }
+
+/* ---------- 主体 ---------- */
+.wrap { width: 100%; max-width: 900px; margin: 0 auto; padding: 30px 20px 10px; flex: 1; }
+h2 { font-size: 20px; color: #d0cabb; margin-bottom: 6px; }
+h3 { font-size: 16px; color: #c9c4b4; margin-bottom: 8px; }
+
+.card {
+  background: rgba(18,20,19,.78); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px 24px; margin: 18px 0;
+  box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  backdrop-filter: blur(8px);
+}
+
+/* ---------- 参数区 ---------- */
+.param-row { padding: 6px 0; }
+.param-row + .param-row { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 14px; }
+.param-label { font-weight: 600; color: #b8b3a4; display: block; margin-bottom: 8px; }
+.slider-box { display: flex; align-items: center; gap: 12px; }
+.slider-end { font-size: 12px; color: var(--sub); white-space: nowrap; }
+.slider-box input[type=range] { flex: 1; accent-color: var(--navy); height: 4px; cursor: pointer; }
+.slider-val {
+  min-width: 46px; text-align: center; font-weight: 700; color: #c9a85a;
+  background: #241d10; border-radius: 6px; padding: 2px 6px;
+}
+.param-note { font-size: 12px; color: var(--sub); margin-top: 8px; }
+.trial-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.trial-row .param-label { margin-bottom: 0; }
+.radio { font-size: 14px; color: #b8b4a8; cursor: pointer; }
+.radio input { accent-color: var(--navy); margin-right: 4px; }
+
+/* ---------- 角色卡片 ---------- */
+.roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.role-card { display: flex; flex-direction: column; position: relative; transition: box-shadow .2s, transform .2s; }
+.role-card:hover { box-shadow: 0 8px 26px rgba(0,0,0,.6); transform: translateY(-2px); }
+.role-icon { font-size: 34px; }
+.role-card h3 { margin-top: 8px; font-size: 18px; }
+.role-epoch { font-size: 12px; color: #a8853e; letter-spacing: .5px; }
+.role-desc { font-size: 13px; color: var(--sub); margin: 10px 0 12px; flex: 1; }
+.tag { display: inline-block; font-size: 12px; border-radius: 999px; padding: 2px 12px; margin-bottom: 14px; width: fit-content; }
+.tag-green { background: rgba(46,90,62,.28); color: #9fd4ae; }
+.tag-purple { background: rgba(90,75,140,.28); color: #c3b3e8; }
+
+/* ---------- 定义卡 ---------- */
+.def-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 26px; }
+.def-grid p { font-size: 13px; color: var(--sub); }
+.def-grid b { color: var(--navy); }
+@media (max-width: 640px) { .def-grid { grid-template-columns: 1fr; } }
+
+/* ---------- 按钮 ---------- */
+.btn-primary {
+  background: #6e1c1c; color: #f0dede; border: none; border-radius: 9px;
+  padding: 11px 26px; font-size: 15px; cursor: pointer; width: 100%;
+}
+.btn-primary:hover { background: #842323; }
+.btn-outline {
+  background: transparent; color: #b8b3a4; border: 1px solid #4a4f4c;
+  border-radius: 9px; padding: 10px 22px; font-size: 14px; cursor: pointer;
+}
+.btn-outline:hover:not(:disabled) { background: rgba(255,255,255,.05); border-color: #6a716c; }
+.btn-outline:disabled { opacity: .45; cursor: not-allowed; border-color: var(--sub); color: var(--sub); }
+.btn-gold {
+  background: linear-gradient(150deg, var(--gold), var(--gold-dark)); color: #fff;
+  border: none; border-radius: 9px; padding: 10px 24px; font-size: 14px; cursor: pointer;
+}
+.btn-gold:disabled { opacity: .45; cursor: not-allowed; }
+.role-start { width: 100%; }
+
+/* ---------- 游戏界面 ---------- */
+.rule-strip {
+  background: rgba(60,50,26,.28); border-left: 4px solid var(--gold);
+  color: #d0c09a; border-radius: 0 8px 8px 0;
+  padding: 10px 16px; font-size: 13.5px; margin-bottom: 14px;
+}
+.game-status {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 14px; color: var(--sub); margin-bottom: 12px;
+}
+.game-status .hl { color: #7fc98f; font-size: 16px; }
+.game-status .fa { color: #d89a4a; font-size: 16px; }
+
+.intro-panel { text-align: left; }
+.intro-panel ul { padding-left: 20px; font-size: 14px; color: var(--ink); }
+.intro-panel li { margin: 5px 0; }
+.intro-panel .btn-primary { max-width: 240px; margin: 16px auto 4px; display: block; }
+
+/* 游戏说明页：先验概率 + 四种结果含义表 */
+.intro-prior {
+  font-size: 14px; color: #d0ccc0; background: rgba(122,31,31,.16);
+  border-left: 3px solid var(--red); border-radius: 0 8px 8px 0;
+  padding: 8px 12px; margin: 10px 0 12px;
+}
+.intro-oc { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 4px; }
+.intro-oc th, .intro-oc td { border: 1px solid #2e3230; padding: 7px 10px; text-align: left; }
+.intro-oc th { background: #1c1e1c; color: #b8b3a4; font-size: 13px; }
+.intro-oc td { color: #c8c4b8; }
+.intro-oc td:first-child { white-space: nowrap; color: #d0ccc0; }
+
+.stage {
+  position: relative; background: #060b06; border-radius: 12px; overflow: hidden;
+  aspect-ratio: 460 / 220; box-shadow: 0 4px 18px rgba(0,0,0,.25);
+}
+.stage svg { display: block; width: 100%; height: 100%; }
+.judge-mask {
+  position: absolute; inset: 0; background: #0a0a0a;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #cfd6e4; gap: 6px;
+}
+.judge-icon { font-size: 26px; color: #8a93a8; }
+.judge-title { font-size: 24px; font-weight: 700; color: #e8edf5; }
+.judge-sub { font-size: 13px; color: #8a93a8; }
+
+.judge-btns { display: flex; gap: 18px; justify-content: center; margin-top: 18px; }
+.btn-danger, .btn-safe {
+  border-radius: 9px; padding: 12px 34px; font-size: 16px;
+  cursor: pointer; min-width: 170px; letter-spacing: 1px;
+}
+/* 有信号 = 暗红（报告危险）；无信号 = 深灰（保持沉默） */
+.btn-danger { background: #6e1c1c; border: 1px solid #8f2b2b; color: #f2dede; }
+.btn-danger:hover { background: #822222; }
+.btn-safe { background: #2c2f2e; border: 1px solid #4a4f4d; color: #c9ccc6; }
+.btn-safe:hover { background: #363a38; }
+
+.feedback { text-align: center; font-size: 16px; font-weight: 600; min-height: 28px; margin-top: 14px; }
+.feedback.ok { color: #7fc98f; }
+.feedback.bad { color: #d89a4a; }
+
+/* ---------- 结果界面（恐怖主题数据面板） ---------- */
+#screen-result { position: relative; background: #0b0d0c; }
+/* 背景：延续上一局场景的淡化模糊图（JS 按角色切换），铺满 + 压暗 + 去饱和 */
+.result-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-size: cover; background-position: center;
+  filter: blur(9px) brightness(.4) saturate(.82);
+  opacity: .6; transform: scale(1.08);
+}
+#screen-result > header, #screen-result > main, #screen-result > footer { position: relative; z-index: 1; }
+#screen-result .topbar { background: rgba(11,13,12,.55); backdrop-filter: blur(8px); border-bottom-color: rgba(70,40,40,.4); }
+
+/* 大标题：暗红微弱发光 */
+.horror-glow {
+  color: #c23a3a;
+  text-shadow: 0 0 16px rgba(194,58,58,.6), 0 0 46px rgba(194,58,58,.28);
+}
+
+.result-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: stretch; }
+@media (max-width: 780px) { .result-grid { grid-template-columns: 1fr; } }
+
+/* 半透明黑化磨砂卡片 + 细微裂纹边角 */
+.horror-card {
+  position: relative; overflow: hidden;
+  background: rgba(10,12,11,.6); backdrop-filter: blur(13px);
+  border: 1px solid rgba(150,110,95,.24); border-radius: 10px;
+  box-shadow: inset 0 0 44px rgba(0,0,0,.5), 0 12px 36px rgba(0,0,0,.55);
+}
+.horror-card::before, .horror-card::after {
+  content: ''; position: absolute; width: 78px; height: 78px; pointer-events: none; opacity: .38;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='78' height='78' viewBox='0 0 78 78'><g stroke='%23a08a7a' stroke-width='1' fill='none'><path d='M2 2 L24 7 L31 27 L55 36'/><path d='M24 7 L27 21 L42 23'/><path d='M2 2 L7 25 L3 43'/><path d='M7 25 L21 31'/></g></svg>");
+  background-repeat: no-repeat;
+}
+.horror-card::before { top: 0; left: 0; }
+.horror-card::after { bottom: 0; right: 0; transform: rotate(180deg); }
+.horror-card h3 { color: #d0cabb; }
+
+.cm-table {
+  width: 100%; margin: 14px auto 6px; border-collapse: collapse;
+  text-align: center; background: transparent;
+}
+.cm-table th, .cm-table td { border: 1px solid #34382f; padding: 12px 10px; font-size: 14px; }
+.cm-head { background: #3a1414; color: #e0c8c8; font-weight: 500; }
+.cm-corner { background: #200b0b; }
+.cm-side { background: #2c1010; color: #d8c0c0; font-weight: 500; }
+.cm-cell { font-size: 16px; font-weight: 600; }
+.cm-h  { background: rgba(46,90,62,.32); color: #9fd4ae; }
+.cm-fa { background: rgba(112,84,32,.32); color: #e0c07a; }
+.cm-m  { background: rgba(122,31,31,.40); color: #e89a8e; }
+.cm-cr { background: rgba(56,64,74,.32); color: #a9bcd4; }
+
+.metrics {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px 12px; margin: 16px 0 4px;
+}
+.metric { text-align: center; }
+.m-wide { grid-column: 1 / -1; }
+.m-label { display: block; font-size: 12px; color: #8f948c; }
+.m-val { display: block; font-size: 26px; font-weight: 700; color: #e6e2d4; font-variant-numeric: tabular-nums; }
+
+.think-card { margin-top: 0; }
+.think-card h3 { border-bottom: 2px solid var(--gold); display: inline-block; padding-bottom: 4px; }
+.think-card p { color: #b8b4a8; }
+.think-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; text-align: center; }
+.think-table th, .think-table td { border: 1px solid #34382f; padding: 8px 10px; }
+.think-table th { background: #1c1e1c; color: #b8b3a4; }
+.think-table td { color: #c8c4b8; }
+.c-pos { background: rgba(112,84,32,.30); font-weight: 700; }
+.c-neg { background: rgba(56,64,84,.30); font-weight: 700; }
+#think-you td { background: rgba(122,31,31,.22); font-weight: 600; color: #e6d8d0; }
+.insight {
+  background: rgba(30,32,30,.6); border-left: 4px solid var(--gold);
+  border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13.5px; color: #b8b4a8;
+}
+.insight p { margin: 6px 0; }
+
+/* ---------- 页脚 ---------- */
+.foot {
+  text-align: center; color: #565c58; font-size: 12px; padding: 18px 0 22px;
+}
+#screen-login .foot { color: rgba(216,212,200,.4); position: absolute; bottom: 6px; left: 0; right: 0; }
+
+/* ---------- 漏报全屏视频反馈（仅 screen-game，播放用户提供的 mp4，完整播完 4s） ---------- */
+.miss-overlay {
+  position: fixed; inset: 0; z-index: 100; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+}
+.miss-overlay.hidden { display: none; }
+.miss-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+}
+.miss-title {
+  position: relative; font-size: 44px; font-weight: 800; letter-spacing: 4px;
+  text-shadow: 0 2px 18px rgba(0,0,0,.8);
+  animation: missTitle 4.2s ease forwards;
+}
+.miss-overlay.a .miss-title { color: #ffb3a6; }
+.miss-overlay.b .miss-title { color: #cdb8ff; }
+@keyframes missTitle {
+  0%   { opacity: 0; transform: scale(.5); }
+  8%   { opacity: 1; transform: scale(1.18); }
+  14%  { transform: scale(1); }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* =========================================================
+   概念实验室（第二阶段）
+   ========================================================= */
+.tabbar { display: flex; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.tab {
+  background: #fff; border: 1px solid var(--line); border-radius: 9px 9px 0 0;
+  padding: 10px 22px; font-size: 14.5px; color: var(--sub); cursor: pointer;
+  border-bottom: none;
+}
+.tab.active { color: var(--navy); font-weight: 700; border-color: var(--navy); background: #eef3fb; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.slider-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+.slider-row label { font-size: 13.5px; color: var(--navy); white-space: nowrap; font-weight: 600; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--navy); cursor: pointer; }
+.slider-row .val {
+  min-width: 52px; text-align: center; font-weight: 700; color: #1e4a8a;
+  background: #eef3fb; border-radius: 6px; padding: 2px 6px; font-variant-numeric: tabular-nums;
+}
+.slider-row select {
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14px; background: #fff; color: var(--ink);
+}
+
+.plot-wrap { position: relative; margin: 12px 0; }
+.plot-wrap svg { display: block; width: 100%; background: #fdfefe; border: 1px solid var(--line); border-radius: 10px; }
+.hover-tip {
+  position: absolute; display: none; z-index: 10; pointer-events: none;
+  background: #fff; color: #222; font-size: 12.5px; line-height: 1.9;
+  padding: 8px 12px; border-radius: 8px; white-space: nowrap;
+  border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.hover-tip b { color: #1e4a8a; }
+.chip { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+/* 场景预设独立板块 */
+.scenario-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.scenario-btn {
+  padding: 9px 22px; border-radius: 999px; border: 1.5px solid var(--line);
+  background: #fff; color: var(--sub); font-size: 14px; cursor: pointer;
+}
+.scenario-btn:hover { border-color: var(--navy); color: var(--navy); }
+.scenario-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 600; }
+.scenario-card .muted { margin-top: 10px; }
+
+/* 混淆矩阵 + SDT 指标 双栏 */
+.lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 700px) { .lab-grid { grid-template-columns: 1fr; } }
+.sdt-table { width: 100%; border-collapse: collapse; }
+.sdt-table td { border: 1px solid var(--line); padding: 8px 12px; font-size: 14px; }
+.sdt-table td:first-child { background: #f2f5fa; color: var(--navy); font-weight: 600; width: 55%; }
+.sdt-table td:last-child { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.small-cm { max-width: 560px; font-size: 13px; }
+.small-cm th, .small-cm td { padding: 8px 6px !important; font-size: 13px !important; }
+.small-metrics .m-val { font-size: 19px; }
+.small { font-size: 12.5px; }
+
+.roc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 10px; }
+@media (max-width: 700px) { .roc-row { grid-template-columns: 1fr; } }
+.roc-row svg { display: block; width: 100%; background: #fdfefe; border: 1px solid var(--line); border-radius: 10px; }
+
+.pay-table { border-collapse: collapse; margin: 8px 0 16px; }
+.pay-table th, .pay-table td {
+  border: 1px solid var(--line); padding: 10px 14px; font-size: 13.5px; text-align: center;
+}
+.pay-table th { background: #f2f5fa; color: var(--navy); }
+.pay-input, .pay-table input {
+  width: 84px; padding: 6px; border: 1px solid #c8d2e0; border-radius: 6px;
+  text-align: center; font-size: 14px; margin-left: 6px;
+}
+.pay-table input:focus { outline: 2px solid #9db8dd; }
+
+/* ===== 第三阶段：数据查看（恐怖档案风） ===== */
+#screen-data { position: relative; background: #0b0d0c; }
+/* 背景：深色底 + 轻微老旧纸张质感的微光晕（细颗粒由全局噪点层提供） */
+#screen-data::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 85% 55% at 50% -5%, rgba(90,30,30,.14), transparent 60%),
+    radial-gradient(ellipse 75% 50% at 50% 108%, rgba(64,56,28,.12), transparent 65%),
+    #0b0d0c;
+}
+#screen-data > * { position: relative; z-index: 1; }
+#screen-data .topbar { background: transparent; }
+#screen-data .plot-wrap svg { background: #101211; border-color: var(--line); }
+
+.board-scroll { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: #121413; }
+.board-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.board-table th {
+  position: sticky; top: 0; z-index: 2; background: #191b1a; color: #a8aca2;
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px; font-size: 12px; white-space: nowrap; text-align: center; font-weight: 600;
+}
+.board-table td {
+  padding: 7px 10px; border-top: 1px solid #222624; text-align: center;
+  white-space: nowrap; font-variant-numeric: tabular-nums; color: #c6cabe;
+}
+.board-table tbody tr:nth-child(even) td { background: #181a18; }
+.board-table tbody tr:hover td { background: #21241f; }
+.board-table tr.me-row td { background: rgba(122,31,31,.30); color: #ecd8d2; font-weight: 600; }
+.board-table tr.me-row:hover td { background: rgba(122,31,31,.42); }
+.rank {
+  display: inline-block; min-width: 26px; padding: 2px 0; border-radius: 7px;
+  font-weight: 700; font-size: 12.5px; background: #222624; color: #8f948c;
+}
+/* 奖牌：哑光暗金 / 暗银 / 古铜，不亮闪 */
+.rk1 { background: #6e5722; color: #e8d9a8; }
+.rk2 { background: #54585c; color: #d6d9dc; }
+.rk3 { background: #5f3c20; color: #e3c4a4; }
+.data-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 900px) { .data-charts { grid-template-columns: 1fr; } }
+.legend-note { font-size: 12px; color: #7d857e; margin-top: 6px; line-height: 1.5; }
+.data-toolbar { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.dbtn { font-size: 13.5px; padding: 8px 16px; }
+.dbtn.danger { color: #d98a8a; border-color: #7a1f1f; }
+.dbtn.danger:hover { background: rgba(122,31,31,.18); }
+.empty-note { text-align: center; color: #6f7670; font-size: 14px; padding: 34px 10px; }
+.data-tip {
+  position: fixed; z-index: 300; display: none; pointer-events: none;
+  background: rgba(14,16,15,.95); color: #d8d4c8; border: 1px solid #7a1f1f; border-radius: 8px;
+  padding: 8px 11px; font-size: 12.5px; line-height: 1.55;
+  box-shadow: 0 6px 20px rgba(0,0,0,.6);
+}
+.board-scroll::-webkit-scrollbar, .viz-scroll::-webkit-scrollbar { width: 8px; }
+.board-scroll::-webkit-scrollbar-track, .viz-scroll::-webkit-scrollbar-track { background: #141615; border-radius: 4px; }
+.board-scroll::-webkit-scrollbar-thumb, .viz-scroll::-webkit-scrollbar-thumb { background: #3a3f3c; border-radius: 4px; }
+.board-scroll::-webkit-scrollbar-thumb:hover, .viz-scroll::-webkit-scrollbar-thumb:hover { background: #565c58; }
+
+/* ===== 数据页页签（独立类避免与 lab.js 冲突；暗红档案风） ===== */
+.dtab {
+  background: #141615; border: 1px solid var(--line); border-radius: 9px 9px 0 0;
+  padding: 10px 22px; font-size: 14.5px; color: var(--sub); cursor: pointer;
+  border-bottom: none;
+}
+.dtab:hover { color: #c8c4b8; }
+.dtab.active { color: #e0c8c8; font-weight: 700; border-color: #7a1f1f; background: #1e1212; }
+.dpanel { display: none; }
+.dpanel.active { display: block; }
+
+/* =========================================================
+   概念实验室特例：旧档案纸卡片
+   （该页 SVG 图由 lab.js 以深色绘制，米黄做旧纸底保证可读，
+     与全局恐怖主题形成"实验档案"质感呼应）
+   ========================================================= */
+#screen-lab .card {
+  background: #dcd5c1; border-color: #b5ac96; color: #2a2620;
+  backdrop-filter: none; box-shadow: 0 6px 22px rgba(0,0,0,.5);
+}
+#screen-lab .card h3 { color: #4a3826; }
+#screen-lab .card .muted { color: #6a6455; }
+#screen-lab .tab { background: #1a1c1b; border-color: var(--line); color: var(--sub); }
+#screen-lab .tab:hover { color: #c8c4b8; }
+#screen-lab .tab.active { color: #3a2e20; background: #dcd5c1; border-color: #b5ac96; }
+#screen-lab .slider-row label { color: #4a3826; }
+#screen-lab .slider-row .val { background: #c9c0a8; color: #4a3826; }
+#screen-lab .scenario-btn { background: #cfc7b0; border-color: #b5ac96; color: #6a6455; }
+#screen-lab .scenario-btn:hover { border-color: #7a1f1f; color: #7a1f1f; }
+#screen-lab .scenario-btn.active { background: #7a1f1f; border-color: #7a1f1f; color: #f0dede; }
+#screen-lab .sdt-table td { border-color: #b5ac96; }
+#screen-lab .sdt-table td:first-child { background: #cfc7b0; color: #4a3826; }
+#screen-lab .cm-table th, #screen-lab .cm-table td { border-color: #b5ac96; }
+#screen-lab .cm-head { background: #5f3c20; color: #f0e0d0; }
+#screen-lab .cm-corner { background: #4a2e16; }
+#screen-lab .cm-side { background: #6e4526; color: #f0e0d0; }
+#screen-lab .cm-h  { background: #c8dcc4; color: #2a5a38; }
+#screen-lab .cm-fa { background: #e8d9ae; color: #7a5a10; }
+#screen-lab .cm-m  { background: #e0b8ae; color: #8a2a1a; }
+#screen-lab .cm-cr { background: #c4cede; color: #2a3f5f; }
+#screen-lab .plot-wrap svg, #screen-lab .roc-row svg { background: #f4f0e4; border-color: #b5ac96; }
+#screen-lab .hover-tip { background: #f4f0e4; border-color: #b5ac96; color: #2a2620; }
+#screen-lab .pay-table th, #screen-lab .pay-table td { border-color: #b5ac96; }
+#screen-lab .pay-table th { background: #cfc7b0; color: #4a3826; }
+#screen-lab .pay-table input { background: #f4f0e4; border-color: #b5ac96; color: #2a2620; }
+#screen-lab .metric .m-label { color: #6a6455; }
+#screen-lab .metric .m-val { color: #2a2620; }
